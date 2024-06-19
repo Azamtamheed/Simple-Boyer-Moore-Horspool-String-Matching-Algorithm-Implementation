@@ -1,0 +1,107 @@
+#Bayer moore algorithm
+#code written by mueed, azam, mohsin, and fallah
+def preprocess_pattern(pattern):
+    """
+    Preprocess the pattern to create both bad character and good suffix tables.
+    """
+    m = len(pattern)
+    bad_char = [-1] * 256  # Initialize bad character table
+    good_suffix = [0] * (m + 1)  # Initialize good suffix table
+
+    # Build bad character table
+    for i in range(m):
+        bad_char[ord(pattern[i])] = i
+
+    # Build good suffix table
+    border = [0] * (m + 1)
+    i = m
+    j = m + 1
+    border[i] = j
+
+    while i > 0:
+        while j <= m and pattern[i - 1] != pattern[j - 1]:
+            if good_suffix[j] == 0:
+                good_suffix[j] = j - i
+            j = border[j]
+        i -= 1
+        j -= 1
+        border[i] = j
+
+    j = border[0]
+    for i in range(m + 1):
+        if good_suffix[i] == 0:
+            good_suffix[i] = j
+        if i == j:
+            j = border[j]
+
+    return bad_char, good_suffix
+
+def search(text, pattern):
+    """
+    Search for the pattern in the text using Boyer-Moore algorithm.
+    """
+    m = len(pattern)
+    n = len(text)
+    bad_char, good_suffix = preprocess_pattern(pattern)
+
+    s = 0  # Shift of the pattern with respect to text
+    pattern_found = False  # Flag to track if pattern is found
+    while s <= n - m:
+        j = m - 1
+
+        # Match characters
+        while j >= 0 and pattern[j] == text[s + j]:
+            j -= 1
+
+        # Pattern found or shift based on heuristics
+        if j < 0:
+            print(f"Pattern occurs at shift {s}")
+            pattern_found = True
+            s += good_suffix[0]
+        else:
+            # Shift based on bad character and good suffix rules
+            s += max(good_suffix[j + 1], j - bad_char[ord(text[s + j])])
+
+    if not pattern_found:
+        print("Pattern not found in the text.")
+
+# Relevant input validation
+def validate_input(prompt, validation_func, error_message):
+    """
+    Validate user input based on a given validation function.
+    """
+    while True:
+        user_input = input(prompt)
+        if validation_func(user_input):
+            return user_input
+        else:
+            print(error_message)
+
+def is_non_empty_string(s):
+    """
+    Check if the input string is non-empty.
+    """
+    return bool(s.strip())
+
+def is_yes_or_no(s):
+    """
+    Check if the input string is 'yes' or 'no'.
+    """
+    return s.lower() in ['yes', 'no']
+
+# Ask user whether they want to enter text or pattern again
+def repeated_search():
+    """
+    Allow the user to repeatedly search for patterns in different texts.
+    """
+    while True:
+        text = validate_input("Enter the text: ", is_non_empty_string, "Text cannot be empty.")
+        pattern = validate_input("Enter the pattern: ", is_non_empty_string, "Pattern cannot be empty.")
+        search(text, pattern)
+        repeat = validate_input("Do you want to search again? (yes/no): ", is_yes_or_no, "Please enter 'yes' or 'no'.").strip().lower()
+        if repeat != 'yes':
+            break
+        print("\n" + "="*50 + "\n")
+
+# Start the repeated search function
+repeated_search()
